@@ -1,0 +1,54 @@
+name: Apply iPad landscape V2.6
+
+on:
+  push:
+    paths:
+      - '.github/workflows/apply-ipad-landscape-v26.yml'
+
+permissions:
+  contents: write
+
+jobs:
+  patch:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Apply landscape-safe CSS override
+        shell: bash
+        run: |
+          python3 <<'PY'
+          from pathlib import Path
+          p=Path('index.html')
+          s=p.read_text(encoding='utf-8')
+          css=r'''
+          /* V2.6 iPad mini 2 landscape fix */
+          .overlay{position:fixed!important;left:0!important;top:0!important;right:0!important;bottom:0!important;width:100%!important;height:100%!important;overflow:hidden!important}
+          .panel{position:absolute!important;left:12px!important;right:12px!important;top:12px!important;bottom:12px!important;width:auto!important;max-width:860px!important;margin:0 auto!important;padding:16px 20px 68px!important;overflow-y:auto!important;overflow-x:hidden!important;-webkit-overflow-scrolling:touch!important}
+          .panel h2{margin:0 0 10px!important;font-size:22px!important}
+          .panel label{margin-top:8px!important;font-size:13px!important}
+          .panel input,.panel textarea{margin-top:4px!important;padding:8px 9px!important;font-size:14px!important}
+          .panel textarea{height:72px!important}
+          .actions{position:sticky!important;bottom:-68px!important;z-index:5!important;margin:14px -20px -68px!important;padding:12px 20px 16px!important;background:#faf8f4!important;border-top:1px solid #e2ddd4!important}
+          body.night .actions{background:#292a27!important;border-top-color:#444540!important}
+          @media screen and (orientation:landscape) and (max-height:700px){
+            .panel{left:8px!important;right:8px!important;top:8px!important;bottom:8px!important;max-width:900px!important;padding:12px 16px 58px!important}
+            .panel h2{font-size:19px!important;margin-bottom:6px!important}.panel label{margin-top:6px!important;font-size:12px!important}
+            .panel input,.panel textarea{padding:6px 8px!important;font-size:13px!important}.panel textarea{height:56px!important}
+            .help,.panel-help{font-size:9px!important;line-height:1.3!important;margin-top:3px!important}.tools,.photo-tools{margin-top:6px!important}
+            .photo-action{padding:7px 10px!important;font-size:12px!important}.actions{bottom:-58px!important;margin:10px -16px -58px!important;padding:9px 16px 12px!important}.action{padding:8px 11px!important;font-size:12px!important}
+          }
+          @media screen and (orientation:landscape){.controls{bottom:22px!important;right:22px!important}.mode-switch{bottom:18px!important}.mode-hint{bottom:56px!important}}
+          '''
+          if 'V2.6 iPad mini 2 landscape fix' not in s:
+              s=s.replace('</style>',css+'\n</style>',1)
+          s=s.replace('<title>天汇府 · 家庭信息屏 V2.5</title>','<title>天汇府 · 家庭信息屏 V2.6</title>',1)
+          p.write_text(s,encoding='utf-8')
+          PY
+      - name: Commit V2.6
+        shell: bash
+        run: |
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add index.html
+          git commit -m 'Apply iPad landscape modal fix V2.6'
+          git push
