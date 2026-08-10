@@ -1,0 +1,46 @@
+name: Patch photo controls
+on:
+  push:
+    paths:
+      - '.github/workflows/patch-photo-controls.yml'
+permissions:
+  contents: write
+jobs:
+  patch:
+    if: github.actor != 'github-actions[bot]'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Patch photo and settings controls
+        shell: python
+        run: |
+          from pathlib import Path
+          import re
+          p = Path('index.html')
+          s = p.read_text(encoding='utf-8')
+          s = re.sub(
+              r'\.controls\{position:absolute;right:16px;bottom:10px;opacity:\.28\}',
+              '.controls{position:absolute;right:18px;bottom:18px;z-index:8;background:rgba(246,243,237,.90);border:1px solid rgba(207,201,190,.85);border-radius:20px;padding:3px;box-shadow:0 5px 18px rgba(40,36,29,.06)}',
+              s
+          )
+          s = s.replace(
+              '<div class="controls"><button id="settingsBtn" class="btn">设置</button></div>',
+              '<div class="controls"><button id="quickPhotoBtn" class="btn">照片</button><button id="settingsBtn" class="btn">设置</button></div>'
+          )
+          if 'quickPhotoBtn' in s and 'el("quickPhotoBtn").onclick' not in s:
+              s = re.sub(
+                  r'(el\("settingsBtn"\)\.onclick)',
+                  'el("quickPhotoBtn").onclick=function(){el("photoInput").click()};\\1',
+                  s,
+                  count=1
+              )
+          s = s.replace('天汇府 · 家庭信息屏 V2.4','天汇府 · 家庭信息屏 V2.5')
+          p.write_text(s, encoding='utf-8')
+      - name: Commit patch
+        run: |
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add index.html
+          git diff --cached --quiet && exit 0
+          git commit -m 'Make photo controls visible'
+          git push
